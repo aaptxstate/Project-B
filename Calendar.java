@@ -1,119 +1,113 @@
+/*Calendar GUI class with notes
+* For Program B
+* Professor Roychowdhury
+* Written By: Brian Pugnali and Arthur Patterson
+* */
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 public class Calendar {
-    static JLabel lblMonth, lblYear;
-    static JButton btnPrev, btnNext, btnOK, btnCancel;
-    static JTable tblCalendar;
-    static JComboBox cmbYear;
-    static JFrame frmMain;
-    static Container pane;
-    static DefaultTableModel mtblCalendar; //Table model
-    static JScrollPane stblCalendar; //The scrollpane
-    static JPanel pnlCalendar;
-    static JTextArea notePad;
-    static String[][] notes = new String[12][32];
-    static String  selectedText = "String";
-    static int realYear, realMonth, realDay, currentYear, currentMonth, selectedDay;
+    static private JLabel lblMonth;
+    static private JButton btnPrev, btnNext, btnOK, btnCancel;
+    static private JTable tblCalendar;
+    static private DefaultTableModel mtblCalendar;
+    static private JTextArea notePad;
+    static private String[] months =  {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+    static private int realYear, realMonth, realDay, currentYear, currentMonth, selectedDay = -1;
+    static public String[][] notes = new String[12][32];
+
     public static void main (String args[]){
-        //Look and feel
+        // Look and feel
         try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-        catch (ClassNotFoundException e) {}
-        catch (InstantiationException e) {}
-        catch (IllegalAccessException e) {}
-        catch (UnsupportedLookAndFeelException e) {}
+        catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException | IllegalAccessException ignored) {}
 
         //Prepare frame
-        frmMain = new JFrame ("Note Calendar"); //Create frame
-        frmMain.setSize(550, 375); //Set size
-        pane = frmMain.getContentPane(); //Get content pane
-        pane.setLayout(null); //Apply null layout
-        frmMain.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //Close when X is clicked
+        JFrame frmMain = new JFrame("Note Calendar");
+        frmMain.setSize(650, 375);
+        Container pane = frmMain.getContentPane();
+        pane.setLayout(null);
+        frmMain.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         //Create controls
         lblMonth = new JLabel ("January");
-        lblYear = new JLabel ("Change year:");
-        cmbYear = new JComboBox();
         btnPrev = new JButton ("Prev");
         btnNext = new JButton ("Fwd");
         btnOK = new JButton("Save Note");
-        btnCancel = new JButton("Cancel");
+        btnCancel = new JButton("Undo");
         mtblCalendar = new DefaultTableModel(){public boolean isCellEditable(int rowIndex, int mColIndex){return false;}};
         tblCalendar = new JTable(mtblCalendar);
-        stblCalendar = new JScrollPane(tblCalendar);
-        pnlCalendar = new JPanel(null);
+        JScrollPane stblCalendar = new JScrollPane(tblCalendar);
+        JPanel pnlCalendar = new JPanel(null);
 
+        String selectedText = "String";
         notePad = new JTextArea(selectedText);
 
 
         //Set border
-        pnlCalendar.setBorder(BorderFactory.createTitledBorder("Calendar"));
+        pnlCalendar.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "2017 Calendar"));
+        notePad.setBorder(BorderFactory.createTitledBorder("Note"));
 
-        //Register action listeners
-        btnPrev.addActionListener(new btnPrev_Action());
-        btnNext.addActionListener(new btnNext_Action());
-        btnOK.addActionListener(new btnOK_Action());
-        btnCancel.addActionListener(new btnCancel_Action());
-        cmbYear.addActionListener(new cmbYear_Action());
+        //Assign listeners to buttons
+        btnPrev.addActionListener(new btnPrevAction());
+        btnNext.addActionListener(new btnNextAction());
+        btnOK.addActionListener(new btnOKAction());
+        btnCancel.addActionListener(new btnCancelAction());
 
         tblCalendar.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
                 JTable target = (JTable)e.getSource();
-                String temp = target.getValueAt(target.getSelectedRow(), target.getSelectedColumn()).toString();
-                selectedDay = Integer.parseInt(temp);
-                notePad.replaceRange(null,0, notePad.getText().length());
-                notePad.replaceSelection(notes[currentMonth][selectedDay]);
-                System.out.println(currentMonth);
-                System.out.println(selectedDay);
+                // Not allow selection of empty days, do nothing if same day selected
+                if (target.getValueAt(target.getSelectedRow(), target.getSelectedColumn()) != null) {
+                    String day = target.getValueAt(target.getSelectedRow(), target.getSelectedColumn()).toString();
+                    setNotePad(Integer.parseInt(day));
+                } else {
+                    setNotePad(0);
+                }
             }
         });
-        //Add controls to pane
+
+        //Add buttons
         pane.add(notePad);
         pane.add(pnlCalendar);
+        pane.add(btnOK);
+        pane.add(btnCancel);
         pnlCalendar.add(lblMonth);
-        pnlCalendar.add(lblYear);
-        pnlCalendar.add(cmbYear);
         pnlCalendar.add(btnPrev);
         pnlCalendar.add(btnNext);
         pnlCalendar.add(stblCalendar);
-        notePad.add(btnOK);
-        notePad.add(btnCancel);
 
-        //Set bounds
+        //Set sizes
         pnlCalendar.setBounds(0, 0, 320, 335);
-        notePad.setBounds(325, 0, 320, 335);
+        notePad.setBounds(325, 0, 320, 300);
         notePad.setLineWrap(true);
         lblMonth.setBounds(160-lblMonth.getPreferredSize().width/2, 25, 100, 25);
-        lblYear.setBounds(10, 305, 80, 20);
-        cmbYear.setBounds(230, 305, 80, 20);
         btnPrev.setBounds(10, 25, 50, 25);
         btnNext.setBounds(260, 25, 50, 25);
-        btnOK.setBounds(50, 50, 50, 25);
-        btnCancel.setBounds(50, 50, 50, 25);
+        btnOK.setBounds(335, 310, 100, 25);
+        btnCancel.setBounds(535 , 310, 100, 25);
         stblCalendar.setBounds(10, 50, 300, 250);
 
         //Make frame visible
         frmMain.setResizable(false);
         frmMain.setVisible(true);
 
-        //Get real month/year
-        GregorianCalendar cal = new GregorianCalendar(); //Create calendar
-        realDay = cal.get(GregorianCalendar.DAY_OF_MONTH); //Get day
-        realMonth = cal.get(GregorianCalendar.MONTH); //Get month
-        realYear = cal.get(GregorianCalendar.YEAR); //Get year
-        currentMonth = realMonth; //Match month and year
+        //Get current month and year
+        GregorianCalendar cal = new GregorianCalendar();
+        realDay = cal.get(GregorianCalendar.DAY_OF_MONTH);
+        realMonth = cal.get(GregorianCalendar.MONTH);
+        realYear = cal.get(GregorianCalendar.YEAR);
+        currentMonth = realMonth;
         currentYear = realYear;
 
         //Add headers
-        String[] headers = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}; //All headers
+        String[] headers = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
         for (int i=0; i<7; i++){
             mtblCalendar.addColumn(headers[i]);
         }
 
-        tblCalendar.getParent().setBackground(tblCalendar.getBackground()); //Set background
+        tblCalendar.getParent().setBackground(tblCalendar.getBackground());
 
         //No resize/reorder
         tblCalendar.getTableHeader().setResizingAllowed(false);
@@ -124,44 +118,59 @@ public class Calendar {
         tblCalendar.setRowSelectionAllowed(true);
         tblCalendar.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        //Set row/column count
+        //Set rows and columns count
         tblCalendar.setRowHeight(38);
         mtblCalendar.setColumnCount(7);
         mtblCalendar.setRowCount(6);
 
-        //Populate table
-        for (int i=realYear-100; i<=realYear+100; i++){
-            cmbYear.addItem(String.valueOf(i));
-        }
-        fillNotes ();
-        //Refresh calendar
-        refreshCalendar (realMonth, realYear); //Refresh calendar
+        //fill in notes and refresh calendar
+        fillNotes();
+        refreshCalendar (realMonth, realYear);
     }
-    static public void fillNotes() {
-        //Draw calendar
-        for (int m=1; m<=12; m++){
+    static private void fillNotes() {
+        for (int m=1; m<=11; m++){
             for (int d=1; d <= 31; d++) {
                 notes[m][d] = "No Notes";
             }
         }
     }
-    static public void refreshCalendar(int month, int year){
-        //Variables
-        String[] months =  {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-        int nod, som; //Number Of Days, Start Of Month
 
-        //Allow/disallow buttons
+    static private void setNotePad(int day) {
+        if (day != -1) {
+            refreshCalendar(currentMonth, currentYear);
+        }
+        if (day == 0) {
+            btnOK.setEnabled(false);
+            btnCancel.setEnabled(false);
+            lblMonth.setText(months[currentMonth]);
+            notePad.replaceRange(null, 0, notePad.getText().length());
+            notePad.replaceSelection("");
+            notePad.setBorder(BorderFactory.createTitledBorder("No day selected"));
+        } else {
+            btnOK.setEnabled(true);
+            btnCancel.setEnabled(true);
+            selectedDay = day;
+            lblMonth.setText(months[currentMonth] + " " + selectedDay);
+            notePad.replaceRange(null, 0, notePad.getText().length());
+            notePad.replaceSelection(notes[currentMonth][selectedDay]);
+            notePad.setBorder(BorderFactory.createTitledBorder("Notes for " + (currentMonth + 1) + '/' + selectedDay));
+        }
+    }
+    static private void refreshCalendar(int month, int year){
+        //Variables
+        int numOfDays, startOfMonth;
+
+        //Set buttons
         btnPrev.setEnabled(true);
         btnNext.setEnabled(true);
-        btnOK.setEnabled(true);
-        btnCancel.setEnabled(true);
-        if (month == 0 && year <= realYear-10){btnPrev.setEnabled(false);} //Too early
-        if (month == 11 && year >= realYear+100){btnNext.setEnabled(false);} //Too late
-        lblMonth.setText(months[month]); //Refresh the month label (at the top)
-        lblMonth.setBounds(160-lblMonth.getPreferredSize().width/2, 25, 180, 25); //Re-align label with calendar
-        cmbYear.setSelectedItem(String.valueOf(year)); //Select the correct year in the combo box
+        if (month == 0 && year <= realYear-10){btnPrev.setEnabled(false);}
+        if (month == 11 && year >= realYear+100){btnNext.setEnabled(false);}
 
-        //Clear table
+        //Set and align month label
+        lblMonth.setText(months[month]);
+        lblMonth.setBounds(160-lblMonth.getPreferredSize().width/2, 25, 180, 25);
+
+        //Reset table
         for (int i=0; i<6; i++){
             for (int j=0; j<7; j++){
                 mtblCalendar.setValueAt(null, i, j);
@@ -170,33 +179,38 @@ public class Calendar {
 
         //Get first day of month and number of days
         GregorianCalendar cal = new GregorianCalendar(year, month, 1);
-        nod = cal.getActualMaximum(GregorianCalendar.DAY_OF_MONTH);
-        som = cal.get(GregorianCalendar.DAY_OF_WEEK);
+        numOfDays = cal.getActualMaximum(GregorianCalendar.DAY_OF_MONTH);
+        startOfMonth = cal.get(GregorianCalendar.DAY_OF_WEEK);
 
         //Draw calendar
-        for (int i=1; i<=nod; i++){
-            int row = new Integer((i+som-2)/7);
-            int column  =  (i+som-2)%7;
+        for (int i=1; i<=numOfDays; i++){
+            int row = (i + startOfMonth - 2) / 7;
+            int column  =  (i+startOfMonth-2)%7;
             mtblCalendar.setValueAt(i, row, column);
         }
-
-        //Apply renderers
         tblCalendar.setDefaultRenderer(tblCalendar.getColumnClass(0), new tblCalendarRenderer());
     }
-
+    // Extend renderer to handle day selection
     static class tblCalendarRenderer extends DefaultTableCellRenderer{
         public Component getTableCellRendererComponent (JTable table, Object value, boolean selected, boolean focused, int row, int column){
             super.getTableCellRendererComponent(table, value, selected, focused, row, column);
-            if (column == 0 || column == 6){ //Week-end
+            if (column == 0 || column == 6){
                 setBackground(new Color(255, 220, 220));
             }
-            else{ //Week
+            else{
                 setBackground(new Color(255, 255, 255));
             }
             if (value != null){
-                if (Integer.parseInt(value.toString()) == realDay && currentMonth == realMonth && currentYear == realYear){ //Today
+                if (Integer.parseInt(value.toString()) == realDay && currentMonth == realMonth && currentYear == realYear){
                     setBackground(new Color(220, 220, 255));
+                    if (selectedDay == -1) {
+                        setNotePad(realDay);
+                        setBackground(new Color(122, 216, 147));
+                    }
                 }
+            }
+            if (selected && value != null) {
+                setBackground(new Color(122, 216, 147));
             }
             setBorder(null);
             setForeground(Color.black);
@@ -205,50 +219,45 @@ public class Calendar {
     }
 
 
-    static class btnPrev_Action implements ActionListener{
+    static class btnPrevAction implements ActionListener{
         public void actionPerformed (ActionEvent e){
-            if (currentMonth == 0){ //Back one year
+            if (currentMonth == 0){
                 currentMonth = 11;
                 currentYear -= 1;
             }
-            else{ //Back one month
+            else{
                 currentMonth -= 1;
             }
             refreshCalendar(currentMonth, currentYear);
         }
     }
-    static class btnNext_Action implements ActionListener{
+    static class btnNextAction implements ActionListener{
         public void actionPerformed (ActionEvent e){
-            if (currentMonth == 11){ //Foward one year
+            if (currentMonth == 11){
                 currentMonth = 0;
                 currentYear += 1;
             }
-            else{ //Foward one month
+            else{
                 currentMonth += 1;
             }
             refreshCalendar(currentMonth, currentYear);
         }
     }
-    static class btnOK_Action implements ActionListener {
+    static class btnOKAction implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            notes[currentMonth][selectedDay] = notePad.getText();
-        }
-    }
-
-    static class btnCancel_Action implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            notePad.replaceRange(null,0, notePad.getText().length());
-            notePad.replaceSelection(notes[currentMonth][selectedDay]);
-        }
-    }
-
-    static class cmbYear_Action implements ActionListener{
-        public void actionPerformed (ActionEvent e){
-            if (cmbYear.getSelectedItem() != null){
-                String b = cmbYear.getSelectedItem().toString();
-                currentYear = Integer.parseInt(b);
-                refreshCalendar(currentMonth, currentYear);
+            if (selectedDay != -1) {
+                notes[currentMonth][selectedDay] = notePad.getText();
             }
         }
     }
+
+    static class btnCancelAction implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            if (selectedDay != -1) {
+                notePad.replaceRange(null, 0, notePad.getText().length());
+                notePad.replaceSelection(notes[currentMonth][selectedDay]);
+            }
+        }
+    }
+
 }
